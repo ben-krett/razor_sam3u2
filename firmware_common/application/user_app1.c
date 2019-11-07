@@ -71,6 +71,22 @@ Function Definitions
 /*! @publicsection */                                                                                            
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+ButtonNameType check_pressed () {
+  if (WasButtonPressed(BUTTON2)) {
+      ButtonAcknowledge(BUTTON2);
+      return BUTTON0;
+    }
+    if (WasButtonPressed(BUTTON2)) {
+      ButtonAcknowledge(BUTTON2);
+      return BUTTON1;
+    }
+    if (WasButtonPressed(BUTTON2)) {
+      ButtonAcknowledge(BUTTON2);
+      return BUTTON2;
+    }
+  return NULL;
+}
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*! @protectedsection */                                                                                            
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -92,6 +108,13 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  LedOff(RED);
+  LedOff(BLUE);
+  LedOff(WHITE);
+  LedOff(PURPLE);
+    LedOff(CYAN);
+
+
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -139,9 +162,48 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
-
-
 {
+  
+  static ButtonNameType BUTTON_COMBO [] = {BUTTON0, BUTTON1, BUTTON1, BUTTON2};
+  static u8 u8_COMBO_LEN = 4;
+  static bool ERROR_MADE = FALSE; // check if an error has been made yet
+  static bool bool_IS_ERROR_SUBMITTED = FALSE; // are we in error mode?, is red light flashing
+  static u32 u32_USER_STEP = 0; // how many buttons are in the user's current input
+  
+  ButtonNameType BUTTON_PRESSED = check_pressed();
+  
+  if (bool_IS_ERROR_SUBMITTED && BUTTON_PRESSED != NULL) 
+  {
+    bool_IS_ERROR_SUBMITTED = TRUE;
+    LedOff(RED);
+    //led code
+  }
+  else if (BUTTON_PRESSED == BUTTON0 || BUTTON_PRESSED == BUTTON1 || BUTTON_PRESSED == BUTTON2) //input button pressed
+  {
+    if (BUTTON_PRESSED != BUTTON_COMBO[u32_USER_STEP]) //is wrong
+    {
+      ERROR_MADE = FALSE;
+    }
+    u32_USER_STEP++;
+  } 
+  else if (BUTTON_PRESSED == BUTTON3) 
+  {
+    if (u32_USER_STEP + 1 ==  u8_COMBO_LEN && !ERROR_MADE) 
+    {
+      LedOn(BLUE);
+    } else {
+      ERROR_MADE = FALSE;
+      bool_IS_ERROR_SUBMITTED = TRUE;
+      u32_USER_STEP = 0;
+      LedOn(RED);
+      
+    }
+      
+     
+  }
+  
+  
+  
     
 } /* end UserApp1SM_Idle() */
      
