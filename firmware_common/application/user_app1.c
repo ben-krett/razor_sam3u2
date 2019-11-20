@@ -71,20 +71,30 @@ Function Definitions
 /*! @publicsection */                                                                                            
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-ButtonNameType check_pressed () {
-  if (WasButtonPressed(BUTTON2)) {
-      ButtonAcknowledge(BUTTON2);
-      return BUTTON0;
+
+
+int check_pressed () {
+  if (WasButtonPressed(BUTTON0)) 
+  {
+      ButtonAcknowledge(BUTTON0);
+      return 0;
     }
-    if (WasButtonPressed(BUTTON2)) {
-      ButtonAcknowledge(BUTTON2);
-      return BUTTON1;
+    if (WasButtonPressed(BUTTON1)) 
+    {
+      ButtonAcknowledge(BUTTON1);
+      return 1;
     }
-    if (WasButtonPressed(BUTTON2)) {
+    if (WasButtonPressed(BUTTON2))
+    {
       ButtonAcknowledge(BUTTON2);
-      return BUTTON2;
+      return 2;
     }
-  return NULL;
+   if (WasButtonPressed(BUTTON3)) 
+   {
+      ButtonAcknowledge(BUTTON3);
+      return 3;
+    }
+  return -1;
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -164,42 +174,85 @@ State Machine Function Definitions
 static void UserApp1SM_Idle(void)
 {
   
-  static ButtonNameType BUTTON_COMBO [] = {BUTTON0, BUTTON1, BUTTON1, BUTTON2};
-  static u8 u8_COMBO_LEN = 4;
+  static int BUTTON_COMBO [] = {0, 1, 2, 0, 1, 2, 0, 1, 2};
+   static u8 u8_COMBO_LEN = 9;
+  u32 LED_LIST [] = {WHITE, PURPLE, BLUE, CYAN,
+  GREEN, YELLOW, ORANGE, RED};
+  static u32 timer = 0;
   static bool ERROR_MADE = FALSE; // check if an error has been made yet
   static bool bool_IS_ERROR_SUBMITTED = FALSE; // are we in error mode?, is red light flashing
+  static bool bool_LOCK_COMPLETED = FALSE;
   static u32 u32_USER_STEP = 0; // how many buttons are in the user's current input
-  
-  ButtonNameType BUTTON_PRESSED = check_pressed();
-  
-  if (bool_IS_ERROR_SUBMITTED && BUTTON_PRESSED != NULL) 
+  int BUTTON_PRESSED = check_pressed();
+  timer++;
+ 
+  if (bool_IS_ERROR_SUBMITTED) 
   {
-    bool_IS_ERROR_SUBMITTED = TRUE;
-    LedOff(RED);
+    if (BUTTON_PRESSED != -1)
+    {
+      bool_IS_ERROR_SUBMITTED = FALSE;
+      LedOff(RED);
+    }
+    else
+    {
+      if (timer%200 < 100) 
+        LedOn(RED);
+      else 
+        LedOff(RED);
+    }
     //led code
   }
-  else if (BUTTON_PRESSED == BUTTON0 || BUTTON_PRESSED == BUTTON1 || BUTTON_PRESSED == BUTTON2) //input button pressed
+  else if ((BUTTON_PRESSED == 0 || BUTTON_PRESSED == 1 || BUTTON_PRESSED == 2) && !bool_LOCK_COMPLETED) //input button pressed
   {
-    if (BUTTON_PRESSED != BUTTON_COMBO[u32_USER_STEP]) //is wrong
+    if (u32_USER_STEP >= u8_COMBO_LEN) //is wrong
     {
-      ERROR_MADE = FALSE;
+      ERROR_MADE = TRUE;
+    }
+    else if (BUTTON_PRESSED != BUTTON_COMBO[u32_USER_STEP])
+    {
+      ERROR_MADE = TRUE;
     }
     u32_USER_STEP++;
   } 
-  else if (BUTTON_PRESSED == BUTTON3) 
+  else if (BUTTON_PRESSED == 3) 
   {
-    if (u32_USER_STEP + 1 ==  u8_COMBO_LEN && !ERROR_MADE) 
+    if (u32_USER_STEP ==  u8_COMBO_LEN && !ERROR_MADE) 
     {
-      LedOn(BLUE);
-    } else {
+      bool_LOCK_COMPLETED = TRUE;
+    } 
+    else 
+    {
       ERROR_MADE = FALSE;
       bool_IS_ERROR_SUBMITTED = TRUE;
       u32_USER_STEP = 0;
       LedOn(RED);
-      
+    } 
+  }
+  else if (bool_LOCK_COMPLETED)
+  {
+    if (BUTTON_PRESSED != -1)
+    {
+      bool_LOCK_COMPLETED = FALSE;
+      u32_USER_STEP = 0;
+      for (int i = 0; i < 8; i++) 
+      {
+        LedOff(LED_LIST[i]);
+      }
+    } 
+    else
+    {
+      for (int i = 0; i < 8; i++) 
+      {
+        if (((timer%200) < (i+1)*25) && ((timer%200) > (i*25))) 
+        {
+          LedOn(LED_LIST[i]);
+        } 
+        else 
+        {
+          LedOff(LED_LIST[i]);
+        }
+      }
     }
-      
-     
   }
   
   
