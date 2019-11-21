@@ -49,7 +49,18 @@ void UserApp1RunActiveState(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
+static void UserApp1SM_StartUpTimer(void);
+
+static void UserApp1SM_SetPassword(void);
+
+static void UserApp1SM_Locked(void);
+
+static void UserApp1SM_WrongCode(void);
+
+static void UserApp1SM_Unlocked(void);
+
 static void UserApp1SM_Idle(void);    
+
 static void UserApp1SM_Error(void);         
 
 

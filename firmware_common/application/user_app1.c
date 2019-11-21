@@ -60,7 +60,11 @@ Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp1_<type>" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_pfStateMachine;               /*!< @brief The state machine function pointer */
-//static u32 UserApp1_u32Timeout;                           /*!< @brief Timeout counter used across states */
+static int * UserApp1_intp_combo;
+static u8 UserApp1_u8_comboLength;
+static u32 UserApp1_u32_LedList [] = {WHITE, PURPLE, BLUE, CYAN, GREEN, YELLOW, ORANGE, RED};
+
+//static u32 UserApp1_u32Timeout;  /*!< @brief Timeout counter used across states */
 
 
 /**********************************************************************************************************************
@@ -122,13 +126,13 @@ void UserApp1Initialize(void)
   LedOff(BLUE);
   LedOff(WHITE);
   LedOff(PURPLE);
-    LedOff(CYAN);
+  LedOff(CYAN);
 
 
   /* If good initialization, set state to Idle */
   if( 1 )
   {
-    UserApp1_pfStateMachine = UserApp1SM_Idle;
+    UserApp1_pfStateMachine = UserApp1SM_StartUpTimer;
   }
   else
   {
@@ -171,13 +175,78 @@ State Machine Function Definitions
 **********************************************************************************************************************/
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* What does this state do? */
+
+static void UserApp1SM_StartUpTimer(void)
+{
+  static u32 u32Counter = 0;
+  u32Counter++;
+  if (WasButtonPressed(BUTTON3))
+  {
+    ButtonAcknowledge(BUTTON3);
+    UserApp1_intp_combo = calloc(sizeof(int), 10);
+    u8 UserApp1_u8_comboLength = 0;
+    
+    UserApp1_pfStateMachine = UserApp1SM_SetPassword;
+  }
+  else if (u32Counter == 3000)
+  {
+    UserApp1_pfStateMachine = UserApp1SM_Locked;
+  }
+}
+static void UserApp1SM_SetPassword(void)
+{
+  static u32 u32Counter = 0;
+  u32Counter++;
+  if (u32Counter%1000 < 500) 
+  {
+    LedOn(RED);
+    LedOff(GREEN);
+  }
+  else
+  {
+    LedOn(GREEN);
+    LedOff(RED);
+  }
+  int intButton = check_pressed();
+  if (intButton == 0 || intButton == 1 || intButton == 2 && UserApp1_u8_comboLength < 10)
+  {
+    UserApp1_intp_combo[UserApp1_u8_comboLength] = intButton;
+    UserApp1_u8_comboLength++;
+    
+  }
+  else if (intButton == 3 && UserApp1_u8_comboLength > 0)
+  {
+    UserApp1_pfStateMachine = UserApp1SM_Locked;
+    LedOff(GREEN);
+    LedOff(RED); 
+  }
+  
+}
+
+static void UserApp1SM_Locked(void)
+{
+  static bool bool_errorMade;
+  static int int_userStep
+  int intButton = check_pressed();
+  if (intButton == 0 || intButton == 1 || intButton == 2)
+  {
+    if (int_userStep >= UserApp1_u8_comboLength)
+    {
+      bool_errorMade = TRUE;
+    } 
+    else if (intButton != UserApp1_intp_combo[int_userStep])
+    {
+      bool_errorMade = TRUE;
+    }
+  }
+  
+}
+      
+      
 static void UserApp1SM_Idle(void)
 {
   
-  static int BUTTON_COMBO [] = {0, 1, 2, 0, 1, 2, 0, 1, 2};
-   static u8 u8_COMBO_LEN = 9;
-  u32 LED_LIST [] = {WHITE, PURPLE, BLUE, CYAN,
-  GREEN, YELLOW, ORANGE, RED};
+  /*
   static u32 timer = 0;
   static bool ERROR_MADE = FALSE; // check if an error has been made yet
   static bool bool_IS_ERROR_SUBMITTED = FALSE; // are we in error mode?, is red light flashing
@@ -255,7 +324,7 @@ static void UserApp1SM_Idle(void)
     }
   }
   
-  
+  */
   
     
 } /* end UserApp1SM_Idle() */
