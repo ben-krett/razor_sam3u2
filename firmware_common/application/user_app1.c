@@ -60,7 +60,7 @@ Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp1_<type>" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_pfStateMachine;               /*!< @brief The state machine function pointer */
-static int * UserApp1_intp_combo;
+static u32 * UserApp1_u32p_combo;
 static u8 UserApp1_u8_comboLength;
 static u32 UserApp1_u32_LedList [] = {WHITE, PURPLE, BLUE, CYAN, GREEN, YELLOW, ORANGE, RED};
 
@@ -77,28 +77,28 @@ Function Definitions
 
 
 
-int check_pressed () {
+u32 check_pressed () {
   if (WasButtonPressed(BUTTON0)) 
   {
       ButtonAcknowledge(BUTTON0);
-      return 0;
+      return BUTTON0;
     }
     if (WasButtonPressed(BUTTON1)) 
     {
       ButtonAcknowledge(BUTTON1);
-      return 1;
+      return BUTTON1;
     }
     if (WasButtonPressed(BUTTON2))
     {
       ButtonAcknowledge(BUTTON2);
-      return 2;
+      return BUTTON2;
     }
    if (WasButtonPressed(BUTTON3)) 
    {
       ButtonAcknowledge(BUTTON3);
-      return 3;
+      return BUTTON3;
     }
-  return -1;
+  return NOBUTTON;
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -183,8 +183,8 @@ static void UserApp1SM_StartUpTimer(void)
   if (WasButtonPressed(BUTTON3))
   {
     ButtonAcknowledge(BUTTON3);
-    UserApp1_intp_combo = calloc(sizeof(int), 10);
-    u8 UserApp1_u8_comboLength = 0;
+    UserApp1_u32p_combo = calloc(sizeof(u32), 10);
+    UserApp1_u8_comboLength = 0;
     
     UserApp1_pfStateMachine = UserApp1SM_SetPassword;
   }
@@ -207,14 +207,14 @@ static void UserApp1SM_SetPassword(void)
     LedOn(GREEN);
     LedOff(RED);
   }
-  int intButton = check_pressed();
-  if (intButton == 0 || intButton == 1 || intButton == 2 && UserApp1_u8_comboLength < 10)
+  u32 u32Button = check_pressed();
+  if ((u32Button == BUTTON0 || u32Button == BUTTON1 || u32Button == BUTTON2) && UserApp1_u8_comboLength < 10)
   {
-    UserApp1_intp_combo[UserApp1_u8_comboLength] = intButton;
+    UserApp1_u32p_combo[UserApp1_u8_comboLength] = u32Button;
     UserApp1_u8_comboLength++;
     
   }
-  else if (intButton == 3 && UserApp1_u8_comboLength > 0)
+  else if (u32Button == BUTTON2 && UserApp1_u8_comboLength > 0)
   {
     UserApp1_pfStateMachine = UserApp1SM_Locked;
     LedOff(GREEN);
@@ -225,16 +225,16 @@ static void UserApp1SM_SetPassword(void)
 
 static void UserApp1SM_Locked(void)
 {
-  static bool bool_errorMade;
-  static int int_userStep
-  int intButton = check_pressed();
-  if (intButton == 0 || intButton == 1 || intButton == 2)
+  static bool bool_errorMade = FALSE;
+  static int int_userStep = 0;
+  u32 u32Button = check_pressed();
+  if (u32Button == BUTTON0 || u32Button == BUTTON1 || u32Button == BUTTON2)
   {
     if (int_userStep >= UserApp1_u8_comboLength)
     {
       bool_errorMade = TRUE;
     } 
-    else if (intButton != UserApp1_intp_combo[int_userStep])
+    else if (u32Button != UserApp1_u32p_combo[int_userStep])
     {
       bool_errorMade = TRUE;
     }
