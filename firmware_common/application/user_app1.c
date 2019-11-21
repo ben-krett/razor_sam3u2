@@ -239,6 +239,18 @@ static void UserApp1SM_Locked(void)
       bool_errorMade = TRUE;
     }
   }
+  else if (u32Button == BUTTON3)
+  {
+    if (bool_errorMade)
+    {
+      UserApp1_pfStateMachine = UserApp1SM_WrongCode;
+    } 
+    else
+    {
+      UserApp1_pfStateMachine = UserApp1SM_Unlocked;
+    }
+  }
+  
   
 }
       
