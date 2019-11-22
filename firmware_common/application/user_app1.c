@@ -190,9 +190,17 @@ static void UserApp1SM_StartUpTimer(void)
   }
   else if (u32Counter == 3000)
   {
+    UserApp1_u32p_combo = calloc(sizeof(u32), 10);
+    u32 temp [10] = {BUTTON0, BUTTON1, BUTTON2};
+    UserApp1_u8_comboLength = 3;
+    for (int i = 0; i < 10; i++)
+    {
+      UserApp1_u32p_combo[i] = temp[i];
+    }
     UserApp1_pfStateMachine = UserApp1SM_Locked;
   }
 }
+
 static void UserApp1SM_SetPassword(void)
 {
   static u32 u32Counter = 0;
@@ -212,9 +220,8 @@ static void UserApp1SM_SetPassword(void)
   {
     UserApp1_u32p_combo[UserApp1_u8_comboLength] = u32Button;
     UserApp1_u8_comboLength++;
-    
   }
-  else if (u32Button == BUTTON2 && UserApp1_u8_comboLength > 0)
+  else if (u32Button == BUTTON3 && UserApp1_u8_comboLength > 0)
   {
     UserApp1_pfStateMachine = UserApp1SM_Locked;
     LedOff(GREEN);
@@ -227,7 +234,7 @@ static void UserApp1SM_Locked(void)
 {
   static bool bool_errorMade = FALSE;
   static int int_userStep = 0;
-  u32 u32Button = check_pressed();
+  u32 u32Button = check_pressed();  
   if (u32Button == BUTTON0 || u32Button == BUTTON1 || u32Button == BUTTON2)
   {
     if (int_userStep >= UserApp1_u8_comboLength)
@@ -238,20 +245,72 @@ static void UserApp1SM_Locked(void)
     {
       bool_errorMade = TRUE;
     }
+    int_userStep++;
   }
   else if (u32Button == BUTTON3)
   {
+    if (int_userStep < UserApp1_u8_comboLength)
+    {
+      bool_errorMade = TRUE;
+    }
+    
     if (bool_errorMade)
     {
       UserApp1_pfStateMachine = UserApp1SM_WrongCode;
+      bool_errorMade = FALSE;
+      int_userStep = 0;
     } 
     else
     {
       UserApp1_pfStateMachine = UserApp1SM_Unlocked;
+      bool_errorMade = FALSE;
+      int_userStep = 0;
+    }
+  } 
+}
+
+static void UserApp1SM_WrongCode(void)
+{
+  static u32 u32Counter = 0;
+  u32Counter++;
+  if (u32Counter % 1000 < 500)
+    LedOn(RED);
+  else
+    LedOff(RED);
+  
+  u32 u32Button = check_pressed();
+  
+  if (u32Counter > 4000 && u32Button != NOBUTTON)
+  {
+    LedOff(RED);
+    u32Counter = 0;
+    UserApp1_pfStateMachine = UserApp1SM_Locked; 
+  }
+}
+static void UserApp1SM_Unlocked(void)
+{
+  u32 timer = 0;
+  timer++;
+  for (int i = 0; i < 8; i++) 
+  {
+    if (((timer%200) < (i+1)*25) && ((timer%200) > (i*25))) 
+    {
+      LedOn(UserApp1_u32_LedList[i]);
+    } 
+    else 
+    {
+      LedOff(UserApp1_u32_LedList[i]);
     }
   }
-  
-  
+  u32 u32Button = check_pressed();
+  if (u32Button != NOBUTTION)
+  {
+    UserApp1_pfStateMachine = UserApp1SM_Locked;
+    for (int i = 0; i < 8; i++) 
+    {
+      LedOff(UserApp1_u32_LedList[i]);
+    }
+  }
 }
       
       
