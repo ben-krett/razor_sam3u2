@@ -127,6 +127,8 @@ void UserApp1Initialize(void)
   LedOff(WHITE);
   LedOff(PURPLE);
   LedOff(CYAN);
+  LcdCommand(LCD_CLEAR_CMD);
+  LcdMessage(LINE1_START_ADDR, "Starting up...");
 
 
   /* If good initialization, set state to Idle */
@@ -185,7 +187,9 @@ static void UserApp1SM_StartUpTimer(void)
     ButtonAcknowledge(BUTTON3);
     UserApp1_u32p_combo = calloc(sizeof(u32), 10);
     UserApp1_u8_comboLength = 0;
-    
+    LcdCommand(LCD_CLEAR_CMD);
+    LcdMessage(LINE1_START_ADDR, "Set a password:");
+
     UserApp1_pfStateMachine = UserApp1SM_SetPassword;
   }
   else if (u32Counter == 3000)
@@ -197,6 +201,8 @@ static void UserApp1SM_StartUpTimer(void)
     {
       UserApp1_u32p_combo[i] = temp[i];
     }
+    LcdCommand(LCD_CLEAR_CMD);
+    LcdMessage(LINE1_START_ADDR, "Enter the password:");
     UserApp1_pfStateMachine = UserApp1SM_Locked;
   }
 }
@@ -219,10 +225,16 @@ static void UserApp1SM_SetPassword(void)
   if ((u32Button == BUTTON0 || u32Button == BUTTON1 || u32Button == BUTTON2) && UserApp1_u8_comboLength < 10)
   {
     UserApp1_u32p_combo[UserApp1_u8_comboLength] = u32Button;
+    char charButton = u32Button + '0';
+    LcdMessage(LINE2_START_ADDR + UserApp1_u8_comboLength, &charButton);
+    LcdClearChars(LINE2_START_ADDR + UserApp1_u8_comboLength + 1, 5);
     UserApp1_u8_comboLength++;
+
   }
   else if (u32Button == BUTTON3 && UserApp1_u8_comboLength > 0)
   {
+    LcdCommand(LCD_CLEAR_CMD);
+    LcdMessage(LINE1_START_ADDR, "Enter the password:");
     UserApp1_pfStateMachine = UserApp1SM_Locked;
     LedOff(GREEN);
     LedOff(RED); 
@@ -245,6 +257,7 @@ static void UserApp1SM_Locked(void)
     {
       bool_errorMade = TRUE;
     }
+    LcdMessage(LINE2_START_ADDR + int_userStep, "*");
     int_userStep++;
   }
   else if (u32Button == BUTTON3)
@@ -256,12 +269,16 @@ static void UserApp1SM_Locked(void)
     
     if (bool_errorMade)
     {
+      LcdCommand(LCD_CLEAR_CMD);
+      LcdMessage(LINE1_START_ADDR, "Wrong Code!");
       UserApp1_pfStateMachine = UserApp1SM_WrongCode;
       bool_errorMade = FALSE;
       int_userStep = 0;
     } 
     else
     {
+      LcdCommand(LCD_CLEAR_CMD);
+      LcdMessage(LINE1_START_ADDR, "Correct Password!");
       UserApp1_pfStateMachine = UserApp1SM_Unlocked;
       bool_errorMade = FALSE;
       int_userStep = 0;
@@ -284,12 +301,14 @@ static void UserApp1SM_WrongCode(void)
   {
     LedOff(RED);
     u32Counter = 0;
+    LcdCommand(LCD_CLEAR_CMD);
+    LcdMessage(LINE1_START_ADDR, "Enter the password:");
     UserApp1_pfStateMachine = UserApp1SM_Locked; 
   }
 }
 static void UserApp1SM_Unlocked(void)
 {
-  u32 timer = 0;
+  static u32 timer = 0;
   timer++;
   for (int i = 0; i < 8; i++) 
   {
@@ -303,8 +322,11 @@ static void UserApp1SM_Unlocked(void)
     }
   }
   u32 u32Button = check_pressed();
-  if (u32Button != NOBUTTION)
+  if (u32Button != NOBUTTON)
   {
+    timer = 0;
+    LcdCommand(LCD_CLEAR_CMD);
+    LcdMessage(LINE1_START_ADDR, "Enter the password:");
     UserApp1_pfStateMachine = UserApp1SM_Locked;
     for (int i = 0; i < 8; i++) 
     {
